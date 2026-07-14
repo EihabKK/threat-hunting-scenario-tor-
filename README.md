@@ -1,74 +1,108 @@
-# Official Internship [Cyber Range](http://joshmadakor.tech/cyber-range) Project
+<div align="center">
 
-<img width="400" src="https://github.com/user-attachments/assets/44bac428-01bb-4fe9-9d85-96cba7698bee" alt="Tor Logo with the onion and a crosshair on it"/>
+# 🧅 Threat Hunt Report: Unauthorized TOR Usage
 
-# Threat Hunt Report: Unauthorized TOR Usage
-- [Scenario Creation](https://github.com/EihabKK/threat-hunting-scenario-tor-/blob/main/threat-hunting-scenario-tor-event-creation.md)
+### Official Internship [Cyber Range](http://joshmadakor.tech/cyber-range) Project
 
-## Platforms and Languages Leveraged
-- Windows 11 Virtual Machines (Microsoft Azure)
-- EDR Platform: Microsoft Defender for Endpoint
-- Kusto Query Language (KQL)
-- Tor Browser
+<img width="380" src="https://github.com/user-attachments/assets/44bac428-01bb-4fe9-9d85-96cba7698bee" alt="Tor Logo with the onion and a crosshair on it"/>
 
-##  Scenario
+[![Platform](https://img.shields.io/badge/Platform-Microsoft%20Azure-0078D4?style=flat-square&logo=microsoftazure&logoColor=white)](#platforms-and-languages-leveraged)
+[![EDR](https://img.shields.io/badge/EDR-Microsoft%20Defender%20for%20Endpoint-00A4EF?style=flat-square&logo=windowsdefender&logoColor=white)](#platforms-and-languages-leveraged)
+[![Query Language](https://img.shields.io/badge/Query%20Language-KQL-4479A1?style=flat-square)](#platforms-and-languages-leveraged)
+[![Status](https://img.shields.io/badge/Status-Resolved-success?style=flat-square)](#response-taken)
 
-Management suspects that some employees may be using TOR browsers to bypass network security controls because recent network logs show unusual encrypted traffic patterns and connections to known TOR entry nodes. Additionally, there have been anonymous reports of employees discussing ways to access restricted sites during work hours. The goal is to detect any TOR usage and analyze related security incidents to mitigate potential risks. If any use of TOR is found, notify management.
+**📄 Related:** [Scenario Creation](https://github.com/EihabKK/threat-hunting-scenario-tor-/blob/main/threat-hunting-scenario-tor-event-creation.md)
 
-### High-Level TOR-Related IoC Discovery Plan
+</div>
 
-- **Check `DeviceFileEvents`** for any `tor(.exe)` or `firefox(.exe)` file events.
-- **Check `DeviceProcessEvents`** for any signs of installation or usage.
-- **Check `DeviceNetworkEvents`** for any signs of outgoing connections over known TOR ports.
+<br>
+
+## 📑 Table of Contents
+
+- [Platforms and Languages Leveraged](#platforms-and-languages-leveraged)
+- [Scenario](#-scenario)
+- [Steps Taken](#-steps-taken)
+- [Timeline of Events](#-timeline-of-events)
+- [Summary](#-summary)
+- [Response Taken](#-response-taken)
 
 ---
 
-## Steps Taken
+## Platforms and Languages Leveraged
 
-### 1. Searched the `DeviceFileEvents` Table
+| Component | Detail |
+|---|---|
+| 🖥️ Environment | Windows 11 Virtual Machines (Microsoft Azure) |
+| 🛡️ EDR Platform | Microsoft Defender for Endpoint |
+| 🔎 Query Language | Kusto Query Language (KQL) |
+| 🧅 Application in Scope | Tor Browser |
+
+---
+
+## 🎯 Scenario
+
+> Management suspects that some employees may be using TOR browsers to bypass network security controls because recent network logs show unusual encrypted traffic patterns and connections to known TOR entry nodes. Additionally, there have been anonymous reports of employees discussing ways to access restricted sites during work hours. The goal is to detect any TOR usage and analyze related security incidents to mitigate potential risks. If any use of TOR is found, notify management.
+
+### 🗺️ High-Level TOR-Related IoC Discovery Plan
+
+| Step | Table | Objective |
+|---|---|---|
+| 1 | `DeviceFileEvents` | Check for any `tor(.exe)` or `firefox(.exe)` file events |
+| 2 | `DeviceProcessEvents` | Check for any signs of installation or usage |
+| 3 | `DeviceNetworkEvents` | Check for any signs of outgoing connections over known TOR ports |
+
+---
+
+## 🔍 Steps Taken
+
+### 1️⃣ Searched the `DeviceFileEvents` Table
 
 Searched the DeviceFileEvents table for ANY file that had the string "tor" in it and discovered what looks like the user "ekvm" downloaded a tor installer, did something that resulted in many tor-related files being copied to the desktop and the creation of a file called "tor-shopping-list.txt" on the desktop at 2026-07-11T08:18:54.9073293Z.
 
-**Query used to locate events:**
+<details>
+<summary><strong>▶ Query used to locate events</strong></summary>
 
 ```kql
-
 DeviceFileEvents
 |where DeviceName == "ekvm"
 | where FileName has_any ("tor")
 | order by Timestamp desc    
 | project Timestamp, DeviceName, ActionType, FileName, SHA256, InitiatingProcessAccountName
-
 ```
-<img width="1752" height="805" alt="image" src="https://github.com/user-attachments/assets/a023ac3a-97cc-4fb9-8e13-3868ae958c40" />
 
+</details>
+
+<img width="1752" height="805" alt="image" src="https://github.com/user-attachments/assets/a023ac3a-97cc-4fb9-8e13-3868ae958c40" />
 
 ---
 
-### 2. Searched the `DeviceProcessEvents` Table
+### 2️⃣ Searched the `DeviceProcessEvents` Table
 
 Searched the DeviceProcessEvents table for any ProcessCommandLine that contained the string "tor-browser-windows-x86_64-portable-15.0.17.exe /S". Based on the the logs returned, at
 2026-07-11T08:12:07.8552813Z, an employee on the "ekvm" device ran the file tor-browser-windows-x86_64-portable-15.0.17.exe /S from their Downloads folder, using a command that triggered a silent installation.
 
-**Query used to locate event:**
+<details>
+<summary><strong>▶ Query used to locate event</strong></summary>
 
 ```kql
-
 DeviceProcessEvents
 | where DeviceName == "ekvm"
 |where ProcessCommandLine contains "tor-browser-windows-x86_64-portable-15.0.17.exe"
 | project Timestamp, DeviceName, ActionType, AccountName, SHA256, ProcessCommandLine
-
 ```
+
+</details>
+
 <img width="1763" height="618" alt="image" src="https://github.com/user-attachments/assets/8567e676-be06-41d7-a589-e55cc6ecac3f" />
 
 ---
 
-### 3. Searched the `DeviceProcessEvents` Table for TOR Browser Execution
+### 3️⃣ Searched the `DeviceProcessEvents` Table for TOR Browser Execution
 
 Searched the DeviceProcessEvents table for any indication that user "employee" actually opened the tor browser. There was evidence that they did open it at 2026-07-11T08:12:43.7777455Z. There were several other instances of firefox.exe (Tor) as well as tor.exe spawned afterwards.
 
-**Query used to locate events:**
+<details>
+<summary><strong>▶ Query used to locate events</strong></summary>
 
 ```kql
 DeviceProcessEvents
@@ -77,15 +111,19 @@ DeviceProcessEvents
 | project Timestamp, DeviceName, ActionType, AccountName, SHA256,FolderPath, ProcessCommandLine
 | order by Timestamp desc
 ```
+
+</details>
+
 <img width="1737" height="796" alt="image" src="https://github.com/user-attachments/assets/763e26bf-61b1-41f7-b01b-a17cacddaf99" />
 
 ---
 
-### 4. Searched the `DeviceNetworkEvents` Table for TOR Network Connections
+### 4️⃣ Searched the `DeviceNetworkEvents` Table for TOR Network Connections
 
 Search the DeviceNetworkEvents table for any indication the tor browser was used to establish a connection using any of the known tor ports. At 2026-07-11T08:12:54.0719267Z, the device ekvm successfully established a network connection to the remote IP address 141.105.130.172 over port 9001. The connection was initiated by the Tor process (tor.exe), which was running under the ekvm user account from the directory C:\Users\ekvm\Desktop\Tor Browser\Browser\TorBrowser\Tor\tor.exe. This indicates that the Tor Browser installation on the device was actively communicating with a Tor network relay.
 
-**Query used to locate events:**
+<details>
+<summary><strong>▶ Query used to locate events</strong></summary>
 
 ```kql
 DeviceNetworkEvents
@@ -96,13 +134,16 @@ DeviceNetworkEvents
 | project Timestamp, DeviceName, ActionType, RemoteIP, RemotePort, RemoteUrl, InitiatingProcessFileName, InitiatingProcessAccountName, InitiatingProcessFolderPath
 |order by Timestamp desc 
 ```
+
+</details>
+
 <img width="1783" height="792" alt="image" src="https://github.com/user-attachments/assets/c41a37c1-2bc4-4920-b625-8f9e05e0c5e3" />
 
 ---
 
-# Timeline of Events
+## 🕒 Timeline of Events
 
-## 1. TOR Installer Download
+### 1. TOR Installer Download
 
 **Timestamp:** `2026-07-11T04:10:25Z – 2026-07-11T04:10:30Z`
 
@@ -114,7 +155,7 @@ DeviceNetworkEvents
 
 ---
 
-## 2. Silent TOR Installation
+### 2. Silent TOR Installation
 
 **Timestamp:** `2026-07-11T04:12:07Z`
 
@@ -128,7 +169,7 @@ DeviceNetworkEvents
 
 ---
 
-## 3. TOR Browser Execution
+### 3. TOR Browser Execution
 
 **Timestamp:** `2026-07-11T04:12:43Z`
 
@@ -140,7 +181,7 @@ DeviceNetworkEvents
 
 ---
 
-## 4. Initial TOR Network Connection
+### 4. Initial TOR Network Connection
 
 **Timestamp:** `2026-07-11T04:12:50Z`
 
@@ -154,7 +195,7 @@ DeviceNetworkEvents
 
 ---
 
-## 5. Additional TOR Relay Connections
+### 5. Additional TOR Relay Connections
 
 **Timestamps:**
 - **2026-07-11T04:12:51Z** – Connected to a remote relay over **port 9001**
@@ -168,7 +209,7 @@ DeviceNetworkEvents
 
 ---
 
-## 6. TOR Shopping List Creation
+### 6. TOR Shopping List Creation
 
 **Timestamp:** `2026-07-11T04:18:54Z`
 
@@ -177,16 +218,23 @@ DeviceNetworkEvents
 **Action:** File creation detected.
 
 **File Path:** `C:\Users\EKVM\Desktop\tor shopping list.txt`
----
-
-## Summary
-
-On July 11, 2026, the user account ekvm bypassed software restrictions by running a portable Tor Browser installer with a silent background parameter (/S), extracting the executable environment directly into a user-writable desktop directory to evade administrative alerts. Upon launch, the application configured a local SOCKS tunnel (127.0.0.1:9150) and established encrypted connections to multiple external Tor relay nodes (178.239.17.187, 136.243.92.194, and 141.105.130.172) over port 9001, completely circumvention network perimeter controls. The employee then engaged in an active, multi-page browsing session spanning over twenty consecutive browser tabs before concluding the activity by generating a custom file directly on the desktop titled tor shopping list.txt. It is recommended to immediately isolate the host, harvest the text artifact for content verification, and enforce application restriction policies to block execution from user-writable directories.
 
 ---
 
-## Response Taken
+## 📋 Summary
 
-TOR usage was confirmed on endpoint EKVM. The device was isolated and the user's direct manager was notified
+> On July 11, 2026, the user account ekvm bypassed software restrictions by running a portable Tor Browser installer with a silent background parameter (/S), extracting the executable environment directly into a user-writable desktop directory to evade administrative alerts. Upon launch, the application configured a local SOCKS tunnel (127.0.0.1:9150) and established encrypted connections to multiple external Tor relay nodes (178.239.17.187, 136.243.92.194, and 141.105.130.172) over port 9001, completely circumvention network perimeter controls. The employee then engaged in an active, multi-page browsing session spanning over twenty consecutive browser tabs before concluding the activity by generating a custom file directly on the desktop titled tor shopping list.txt. It is recommended to immediately isolate the host, harvest the text artifact for content verification, and enforce application restriction policies to block execution from user-writable directories.
 
 ---
+
+## ✅ Response Taken
+
+**TOR usage was confirmed on endpoint EKVM.** The device was isolated and the user's direct manager was notified.
+
+---
+
+<div align="center">
+
+*End of Report*
+
+</div>
