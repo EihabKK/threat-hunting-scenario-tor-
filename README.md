@@ -41,7 +41,7 @@
 
 ## 🎯 Scenario
 
-> Management suspects that some employees may be using TOR browsers to bypass network security controls because recent network logs show unusual encrypted traffic patterns and connections to known TOR entry nodes. Additionally, there have been anonymous reports of employees discussing ways to access restricted sites during work hours. The goal is to detect any TOR usage and analyze related security incidents to mitigate potential risks. If any use of TOR is found, notify management.
+Management suspects that some employees may be using TOR browsers to bypass network security controls because recent network logs show unusual encrypted traffic patterns and connections to known TOR entry nodes. Additionally, there have been anonymous reports of employees discussing ways to access restricted sites during work hours. The goal is to detect any TOR usage and analyze related security incidents to mitigate potential risks. If any use of TOR is found, notify management.
 
 ### 🗺️ High-Level TOR-Related IoC Discovery Plan
 
@@ -223,7 +223,7 @@ DeviceNetworkEvents
 
 ## 📋 Summary
 
-> On July 11, 2026, the user account ekvm bypassed software restrictions by running a portable Tor Browser installer with a silent background parameter (/S), extracting the executable environment directly into a user-writable desktop directory to evade administrative alerts. Upon launch, the application configured a local SOCKS tunnel (127.0.0.1:9150) and established encrypted connections to multiple external Tor relay nodes (178.239.17.187, 136.243.92.194, and 141.105.130.172) over port 9001, completely circumvention network perimeter controls. The employee then engaged in an active, multi-page browsing session spanning over twenty consecutive browser tabs before concluding the activity by generating a custom file directly on the desktop titled tor shopping list.txt. It is recommended to immediately isolate the host, harvest the text artifact for content verification, and enforce application restriction policies to block execution from user-writable directories.
+On July 11, 2026, the user account ekvm bypassed software restrictions by running a portable Tor Browser installer with a silent background parameter (/S), extracting the executable environment directly into a user-writable desktop directory to evade administrative alerts. Upon launch, the application configured a local SOCKS tunnel (127.0.0.1:9150) and established encrypted connections to multiple external Tor relay nodes (178.239.17.187, 136.243.92.194, and 141.105.130.172) over port 9001, completely circumvention network perimeter controls. The employee then engaged in an active, multi-page browsing session spanning over twenty consecutive browser tabs before concluding the activity by generating a custom file directly on the desktop titled tor shopping list.txt. It is recommended to immediately isolate the host, harvest the text artifact for content verification, and enforce application restriction policies to block execution from user-writable directories.
 
 ---
 
